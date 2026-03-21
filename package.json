@@ -1,0 +1,19 @@
+{
+  "name": "chain-supply-failure",
+  "version": "1.0.0",
+  "description": "Demonstração educacional de falha na cadeia de suprimento de software (Supply Chain Attack)",
+  "main": "api-vitima.js",
+  "scripts": {
+    "atacante": "node attacker-server/servidor-atacante.js",
+    "vitima": "node api-vitima.js",
+    "demo": "echo '' && echo '╔══════════════════════════════════════════════════╗' && echo '║  DEMONSTRAÇÃO — Supply Chain Attack              ║' && echo '╠══════════════════════════════════════════════════╣' && echo '║                                                  ║' && echo '║  1. Abra DOIS terminais lado a lado              ║' && echo '║                                                  ║' && echo '║  2. Terminal 1 (atacante):                        ║' && echo '║     npm run atacante                             ║' && echo '║                                                  ║' && echo '║  3. Terminal 2 (vítima):                          ║' && echo '║     npm run vitima                               ║' && echo '║                                                  ║' && echo '║  4. Acesse o Swagger:                            ║' && echo '║     http://localhost:3000/docs                    ║' && echo '║                                                  ║' && echo '║  5. Siga o passo a passo no Swagger!             ║' && echo '║                                                  ║' && echo '╚══════════════════════════════════════════════════╝' && echo ''"
+  },
+  "keywords": ["supply-chain", "security", "demo", "educational"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

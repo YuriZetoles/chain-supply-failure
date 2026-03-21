@@ -1,0 +1,242 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "📋 API de Cadastro de Usuários — (VÍTIMA)",
+    "version": "1.0.0",
+    "description": "## ⚠️ Demonstração Educacional — Supply Chain Attack\n\nEsta API simula um sistema **legítimo de cadastro de usuários** que utiliza uma biblioteca de terceiros chamada `string-helpers`.\n\n**O problema:** essa biblioteca foi comprometida por um atacante que inseriu código malicioso em uma atualização. A API funciona normalmente, mas **todos os dados que passam por ela são silenciosamente enviados para o servidor do atacante**.\n\n---\n\n### 🎯 Passo a Passo da Demonstração\n\n| Passo | Ação | O que observar |\n|-------|------|----------------|\n| **1** | Abra **2 terminais** lado a lado | Terminal do atacante e terminal da vítima |\n| **2** | No terminal 1, execute: `npm run atacante` | O servidor C2 do atacante inicia na porta 3001 |\n| **3** | No terminal 2, execute: `npm run vitima` | A API da vítima inicia na porta 3000 |\n| **4** | Observe o terminal do atacante | Variáveis de ambiente sensíveis já foram roubadas! |\n| **5** | Use o endpoint **POST /usuarios/cadastrar** abaixo | Preencha com dados fictícios e envie |\n| **6** | Observe o terminal do atacante | O cadastro completo aparece nos logs do atacante |\n| **7** | Use o endpoint **POST /usuarios/validar-cpf** | O CPF é validado E roubado ao mesmo tempo |\n| **8** | Use o endpoint **POST /utilidades/sanitizar** | Texto com e-mail/CPF é detectado e exfiltrado |\n| **9** | Abra o arquivo `stolen-data/dados-roubados.json` | Todos os dados estão persistidos lá |\n\n---\n\n### 🔍 O que está acontecendo por baixo dos panos?\n\n```\nDesenvolvedor instala string-helpers (npm install string-helpers)\n        ↓\nA lib parece legítima — funções úteis de manipulação de texto\n        ↓\nMas na v2.1.0, um atacante inseriu código malicioso\n        ↓\nAo fazer require(), a lib já rouba variáveis de ambiente\n        ↓\nCada vez que validarCPF() ou formatarDadosUsuario() é chamada,\nos dados são copiados silenciosamente para o atacante\n        ↓\nA API funciona normalmente — ninguém percebe o ataque\n```"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "API Vítima (servidor local)"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Usuários",
+      "description": "Endpoints de cadastro e validação de dados de usuários. **Estes endpoints usam funções da lib comprometida.**"
+    },
+    {
+      "name": "Utilidades",
+      "description": "Endpoints utilitários de manipulação de texto. Alguns usam funções infectadas da lib."
+    },
+    {
+      "name": "Saúde",
+      "description": "Verificação de status da API."
+    }
+  ],
+  "paths": {
+    "/usuarios/cadastrar": {
+      "post": {
+        "tags": ["Usuários"],
+        "summary": "📝 Cadastrar novo usuário (DADOS SÃO ROUBADOS!)",
+        "description": "## O que faz\nRecebe dados de um usuário e retorna os dados formatados.\n\n## ⚠️ O que acontece por trás\nA função `formatarDadosUsuario()` da lib `string-helpers` é chamada. Ela formata os dados corretamente, **mas também envia uma cópia completa do cadastro para o servidor do atacante**.\n\n## 🎯 Para a apresentação\n1. Preencha os campos abaixo com dados fictícios\n2. Clique em **Execute**\n3. Observe o terminal do atacante — o cadastro completo aparecerá lá",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["nome", "email", "cpf", "telefone", "senha"],
+                "properties": {
+                  "nome": {
+                    "type": "string",
+                    "example": "joão da silva",
+                    "description": "Nome completo do usuário"
+                  },
+                  "email": {
+                    "type": "string",
+                    "example": "joao.silva@email.com",
+                    "description": "E-mail do usuário"
+                  },
+                  "cpf": {
+                    "type": "string",
+                    "example": "12345678900",
+                    "description": "CPF sem pontuação"
+                  },
+                  "telefone": {
+                    "type": "string",
+                    "example": "(11) 99999-8888",
+                    "description": "Telefone com DDD"
+                  },
+                  "senha": {
+                    "type": "string",
+                    "example": "minhaSenhaSecreta123",
+                    "description": "Senha do usuário (TAMBÉM É ROUBADA!)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário cadastrado com sucesso (e dados roubados silenciosamente)"
+          }
+        }
+      }
+    },
+    "/usuarios/validar-cpf": {
+      "post": {
+        "tags": ["Usuários"],
+        "summary": "🪪 Validar CPF (CPF É ROUBADO!)",
+        "description": "## O que faz\nRecebe um CPF e verifica se o formato é válido.\n\n## ⚠️ O que acontece por trás\nA função `validarCPF()` da lib realiza a validação corretamente, **mas também envia o CPF para o atacante**.\n\n## 🎯 Para a apresentação\n1. Digite um CPF (ex: 12345678900)\n2. Clique em **Execute**\n3. Observe o CPF aparecer no terminal do atacante",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["cpf"],
+                "properties": {
+                  "cpf": {
+                    "type": "string",
+                    "example": "12345678900",
+                    "description": "CPF a ser validado"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado da validação (e CPF roubado)"
+          }
+        }
+      }
+    },
+    "/utilidades/sanitizar": {
+      "post": {
+        "tags": ["Utilidades"],
+        "summary": "🔍 Sanitizar texto (DADOS SENSÍVEIS SÃO EXTRAÍDOS!)",
+        "description": "## O que faz\nRecebe um texto e remove caracteres especiais (sanitização contra XSS).\n\n## ⚠️ O que acontece por trás\nA função `sanitizarEntrada()` varre o texto procurando **padrões de e-mail, CPF e telefone** antes de sanitizar. Se encontra, envia tudo ao atacante.\n\n## 🎯 Para a apresentação\n1. Digite um texto que contenha um e-mail ou CPF\n   - Ex: `Meu email é joao@empresa.com e meu CPF é 123.456.789-00`\n2. Clique em **Execute**\n3. Observe o atacante receber os dados encontrados no texto",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["texto"],
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "example": "Meu email é joao@empresa.com e meu CPF é 123.456.789-00",
+                    "description": "Texto para sanitizar"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Texto sanitizado (e dados sensíveis roubados)"
+          }
+        }
+      }
+    },
+    "/utilidades/capitalizar": {
+      "post": {
+        "tags": ["Utilidades"],
+        "summary": "✅ Capitalizar texto (esta função é segura)",
+        "description": "## O que faz\nCapitaliza a primeira letra de cada palavra.\n\n## ✅ Esta função NÃO é maliciosa\nNem todas as funções da lib foram infectadas. O atacante escolheu apenas as que recebem **dados sensíveis** (CPF, cadastros). Funções genéricas como esta foram mantidas limpas para não levantar suspeitas.\n\n## 🎯 Para a apresentação\nUse este endpoint para mostrar que **a lib funciona normalmente** — o ataque é invisível porque as funções legítimas continuam funcionando perfeitamente.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["texto"],
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "example": "exemplo de texto para capitalizar",
+                    "description": "Texto para capitalizar"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Texto capitalizado"
+          }
+        }
+      }
+    },
+    "/utilidades/gerar-slug": {
+      "post": {
+        "tags": ["Utilidades"],
+        "summary": "✅ Gerar slug (esta função é segura)",
+        "description": "## O que faz\nTransforma texto em slug (URL amigável), removendo acentos e espaços.\n\n## ✅ Esta função NÃO é maliciosa\nMais uma função limpa da lib, mantida intacta pelo atacante.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["texto"],
+                "properties": {
+                  "texto": {
+                    "type": "string",
+                    "example": "Título do Meu Artigo com Acentuação!",
+                    "description": "Texto para transformar em slug"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Slug gerado"
+          }
+        }
+      }
+    },
+    "/utilidades/mascarar-email": {
+      "post": {
+        "tags": ["Utilidades"],
+        "summary": "✅ Mascarar e-mail (esta função é segura)",
+        "description": "## O que faz\nMascara um e-mail para exibição: `usuario@email.com` → `u***o@email.com`\n\n## ✅ Esta função NÃO é maliciosa",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "example": "joao.silva@email.com",
+                    "description": "E-mail para mascarar"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "E-mail mascarado"
+          }
+        }
+      }
+    },
+    "/saude": {
+      "get": {
+        "tags": ["Saúde"],
+        "summary": "💚 Verificar status da API",
+        "description": "Retorna o status da API e a versão da lib `string-helpers` utilizada.\n\nNote que a lib aparece como uma dependência normal — nada indica que ela é maliciosa.",
+        "responses": {
+          "200": {
+            "description": "API funcionando"
+          }
+        }
+      }
+    }
+  }
+}

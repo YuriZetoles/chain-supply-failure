@@ -1,32 +1,33 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "API de Cadastro de Usuarios (Vitima)",
+    "title": "API de Cadastro de Usuarios (Segura)",
     "version": "1.0.0",
-    "description": "Esta API utiliza a biblioteca `string-helpers` para formatar e validar dados. A lib foi comprometida na versao 2.1.0 — todas as funcoes marcadas como **comprometidas** enviam uma copia dos dados para o servidor do atacante.\n\n---\n\n### Passo a passo\n\n1. Inicie o servidor do atacante: `npm run atacante`\n2. Inicie esta API: `npm run vitima`\n3. Abra o dashboard do atacante em http://localhost:3001\n4. Execute os endpoints abaixo e observe os dados aparecendo no dashboard"
+    "description": "Versao segura da mesma API vitima. As mesmas operacoes, sem exfiltracao de dados.\n\n---\n\n### Passo a passo\n\n1. Inicie esta API: `npm run segura`\n2. Execute os mesmos endpoints da API vitima\n3. Observe: a senha retorna como hash bcrypt, nao texto puro\n4. Verifique o dashboard do atacante em http://localhost:3001 — nenhum dado aparece\n5. Use os endpoints de `/seguranca` para ver as protecoes aplicadas"
   },
-  "servers": [{ "url": "http://localhost:3000" }],
+  "servers": [{ "url": "http://localhost:3002" }],
   "tags": [
-    { "name": "Comprometidos", "description": "Endpoints que usam funcoes infectadas da lib. Os dados sao roubados silenciosamente." },
-    { "name": "Utilitarios", "description": "Endpoints que usam funcoes limpas da mesma lib." }
+    { "name": "Usuarios", "description": "Cadastro e validacao — sem exfiltracao de dados." },
+    { "name": "Utilitarios", "description": "Funcoes utilitarias usando lib interna da equipe." },
+    { "name": "Seguranca", "description": "Mostram as protecoes aplicadas. Use na apresentacao para explicar cada camada." }
   ],
   "paths": {
     "/usuarios/cadastrar": {
       "post": {
-        "tags": ["Comprometidos"],
-        "summary": "Cadastrar usuario — dados roubados via formatarDadosUsuario()",
-        "description": "A funcao `formatarDadosUsuario()` formata os dados corretamente, mas envia uma copia completa (incluindo a senha) para o atacante.\n\nApós executar, olhe o dashboard do atacante — o cadastro completo estara la.",
+        "tags": ["Usuarios"],
+        "summary": "Cadastrar usuario — senha protegida com hash bcrypt",
+        "description": "Use o CPF `52998224725` (valido). A senha retorna como hash irreversivel. O dashboard do atacante nao recebe nada.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["nome", "email", "cpf", "telefone", "senha"],
+                "required": ["nome", "email", "cpf", "senha"],
                 "properties": {
                   "nome": { "type": "string", "example": "joao da silva" },
                   "email": { "type": "string", "example": "joao.silva@email.com" },
-                  "cpf": { "type": "string", "example": "12345678900" },
+                  "cpf": { "type": "string", "example": "52998224725" },
                   "telefone": { "type": "string", "example": "(11) 99999-8888" },
                   "senha": { "type": "string", "example": "minhaSenhaSecreta123" }
                 }
@@ -34,14 +35,16 @@
             }
           }
         },
-        "responses": { "201": { "description": "Usuario cadastrado" } }
+        "responses": {
+          "201": { "description": "Usuario cadastrado com senha em hash bcrypt" },
+          "400": { "description": "Erro de validacao" }
+        }
       }
     },
     "/usuarios/validar-cpf": {
       "post": {
-        "tags": ["Comprometidos"],
-        "summary": "Validar CPF — CPF roubado via validarCPF()",
-        "description": "A funcao `validarCPF()` valida o formato do CPF, mas tambem envia o valor para o atacante.",
+        "tags": ["Usuarios"],
+        "summary": "Validar CPF — verifica digitos verificadores, sem envio externo",
         "requestBody": {
           "required": true,
           "content": {
@@ -50,7 +53,7 @@
                 "type": "object",
                 "required": ["cpf"],
                 "properties": {
-                  "cpf": { "type": "string", "example": "12345678900" }
+                  "cpf": { "type": "string", "example": "52998224725" }
                 }
               }
             }
@@ -61,9 +64,8 @@
     },
     "/utilidades/sanitizar": {
       "post": {
-        "tags": ["Comprometidos"],
-        "summary": "Sanitizar texto — dados sensiveis extraidos via sanitizarEntrada()",
-        "description": "A funcao `sanitizarEntrada()` remove caracteres perigosos, mas antes disso varre o texto buscando padroes de email, CPF e telefone. Se encontra, envia ao atacante.\n\nTeste com um texto que contenha email e CPF.",
+        "tags": ["Utilitarios"],
+        "summary": "Sanitizar texto — apenas remove caracteres perigosos, sem varredura de dados",
         "requestBody": {
           "required": true,
           "content": {
@@ -84,8 +86,7 @@
     "/utilidades/capitalizar": {
       "post": {
         "tags": ["Utilitarios"],
-        "summary": "Capitalizar texto — funcao limpa",
-        "description": "Esta funcao nao foi infectada. O atacante manteve funcoes genericas intactas para nao levantar suspeitas.",
+        "summary": "Capitalizar texto",
         "requestBody": {
           "required": true,
           "content": {
@@ -106,7 +107,7 @@
     "/utilidades/gerar-slug": {
       "post": {
         "tags": ["Utilitarios"],
-        "summary": "Gerar slug — funcao limpa",
+        "summary": "Gerar slug",
         "requestBody": {
           "required": true,
           "content": {
@@ -127,7 +128,7 @@
     "/utilidades/mascarar-email": {
       "post": {
         "tags": ["Utilitarios"],
-        "summary": "Mascarar email — funcao limpa",
+        "summary": "Mascarar email",
         "requestBody": {
           "required": true,
           "content": {
@@ -145,10 +146,25 @@
         "responses": { "200": { "description": "Email mascarado" } }
       }
     },
+    "/seguranca/headers": {
+      "get": {
+        "tags": ["Seguranca"],
+        "summary": "Ver headers HTTP configurados pelo Helmet",
+        "description": "Para ver os headers reais: F12 > Network > clique em qualquer requisicao > aba Headers.",
+        "responses": { "200": { "description": "Headers de seguranca ativos" } }
+      }
+    },
+    "/seguranca/comparativo": {
+      "get": {
+        "tags": ["Seguranca"],
+        "summary": "Comparativo: API Vitima vs API Segura",
+        "responses": { "200": { "description": "Tabela comparativa" } }
+      }
+    },
     "/saude": {
       "get": {
-        "tags": ["Utilitarios"],
-        "summary": "Status da API",
+        "tags": ["Seguranca"],
+        "summary": "Status da API e ferramentas ativas",
         "responses": { "200": { "description": "API online" } }
       }
     }

@@ -1,17 +1,23 @@
 const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDoc = require("./swagger.json");
+// [!] SUPPLY CHAIN ATTACK: lib de terceiro comprometida -- ao fazer require(), ela ja executa codigo malicioso
 const stringHelpers = require("./lib/string-helpers");
 
 const app = express();
 const PORTA = 3000;
 
-// Variáveis de ambiente sensíveis (capturadas pela lib ao importar)
+// [!] SEM HELMET: nenhum header de seguranca HTTP (sem CSP, sem X-Frame-Options, sem HSTS)
+
+// [!] CREDENCIAIS HARDCODED: segredos expostos direto no codigo-fonte -- qualquer acesso ao repo os ve
 process.env.DATABASE_URL = "postgresql://admin:senha123@db.empresa.com:5432/producao";
 process.env.JWT_SECRET = "meu-segredo-super-secreto-2024";
 process.env.API_KEY = "sk-live-abc123def456ghi789";
 
+// [!] SEM LIMITE DE BODY: aceita payloads de qualquer tamanho -- vulneravel a DoS
 app.use(express.json());
+// [!] SEM RATE LIMITING: sem protecao contra brute-force ou flood de requisicoes
+// [!] MIDDLEWARE MALICIOSO: intercepta headers, body e cookies de todas as requisicoes e exfiltra os dados
 app.use(stringHelpers.loggerDeRequisicoes());
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc, {
@@ -30,10 +36,13 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc, {
 
 app.post("/usuarios/cadastrar", (req, res) => {
   const { nome, email, cpf, telefone, senha } = req.body;
+  // [!] VALIDACAO MINIMA: verifica so se o campo existe -- sem checar tipo, tamanho ou formato
   if (!nome || !email || !cpf) {
     return res.status(400).json({ erro: "Campos obrigatorios: nome, email, cpf" });
   }
 
+  // [!] SENHA EM TEXTO PURO: nenhum hash aplicado -- bcrypt nao e usado em lugar algum
+  // [!] DADOS PASSADOS PARA LIB COMPROMETIDA: nome, email, cpf, telefone e senha enviados a lib maliciosa
   const usuario = stringHelpers.formatarDadosUsuario({ nome, email, cpf, telefone, senha });
 
   res.status(201).json({

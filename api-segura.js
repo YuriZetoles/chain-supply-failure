@@ -1,9 +1,13 @@
 const express = require("express");
+// [+] HELMET: biblioteca confiavel e auditada para headers de seguranca HTTP
 const helmet = require("helmet");
+// [+] BCRYPT: hash seguro para senhas -- nunca armazena em texto puro
 const bcrypt = require("bcrypt");
+// [+] RATE LIMITING: protecao contra brute-force e flood de requisicoes
 const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDoc = require("./swagger-seguro.json");
+// [+] LIB PROPRIA: funcoes internas da equipe -- nenhum codigo externo nao auditado
 const helpers = require("./lib/string-helpers-seguro");
 
 const app = express();
@@ -12,7 +16,7 @@ const PORTA = 3002;
 process.env.DATABASE_URL = "postgresql://admin:senha123@db.empresa.com:5432/producao";
 process.env.JWT_SECRET = "meu-segredo-super-secreto-2024";
 
-// Helmet — headers de seguranca HTTP
+// [+] HELMET: configura automaticamente CSP, X-Frame-Options, HSTS e outros headers de seguranca
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -24,16 +28,17 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting — anti brute-force
+// [+] RATE LIMITING: maximo 100 requisicoes por IP a cada 15 minutos -- bloqueia brute-force
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: { erro: "Muitas requisicoes. Tente novamente em 15 minutos." },
 }));
 
+// [+] LIMITE DE BODY: rejeita payloads acima de 10KB -- previne DoS por payload gigante
 app.use(express.json({ limit: "10kb" }));
 
-// Logger proprio — sem lib externa
+// [+] LOGGER PROPRIO: registra apenas metodo e rota -- nenhum dado sensivel (body, cookies, headers) e exposto
 app.use((req, _res, next) => {
   console.log(`  [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
@@ -56,23 +61,30 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDoc, {
 app.post("/usuarios/cadastrar", async (req, res) => {
   const { nome, email, cpf, telefone, senha } = req.body;
 
+  // [+] VALIDACAO RIGOROSA: todos os campos obrigatorios verificados, incluindo senha
   if (!nome || !email || !cpf || !senha) {
     return res.status(400).json({ erro: "Campos obrigatorios: nome, email, cpf, senha" });
   }
+  // [+] VALIDACAO DE TIPO E TAMANHO: impede strings maliciosas ou vazias demais
   if (typeof nome !== "string" || nome.length < 2 || nome.length > 100) {
     return res.status(400).json({ erro: "Nome deve ter entre 2 e 100 caracteres" });
   }
+  // [+] VALIDACAO DE FORMATO: regex garante e-mail estruturalmente valido
   if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
     return res.status(400).json({ erro: "Formato de e-mail invalido" });
   }
+  // [+] VALIDACAO DE DIGITOS: verifica os digitos verificadores reais do CPF
   if (!helpers.validarCPF(cpf)) {
     return res.status(400).json({ erro: "CPF invalido" });
   }
+  // [+] FORCA MINIMA DE SENHA: rejeita senhas fracas antes de processar
   if (senha.length < 8) {
     return res.status(400).json({ erro: "Senha deve ter no minimo 8 caracteres" });
   }
 
+  // [+] BCRYPT HASH: senha nunca armazenada em texto puro -- salt rounds 10 = resistente a brute-force offline
   const senhaHash = await bcrypt.hash(senha, 10);
+  // [+] LIB SEGURA: dados passados apenas para funcao interna -- sem exfiltracao
   const usuario = helpers.formatarDadosUsuario({ nome, email, cpf, telefone });
 
   res.status(201).json({
